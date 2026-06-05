@@ -33,7 +33,7 @@ h1,h2,h3 { font-family:'Cinzel',serif; }
 .supply-bar-bg { background:rgba(255,255,255,0.1); border-radius:8px; height:8px; margin:0.5rem 0; overflow:hidden; }
 .supply-bar-fill { background:linear-gradient(90deg,var(--primary),#A78BFA); height:100%; border-radius:8px; transition:width 0.3s; }
 input { width:100%; padding:0.75rem; border-radius:12px; border:1px solid var(--border); background:var(--card); color:var(--text); margin-bottom:0.75rem; font-size:1rem; }
-.sigil-preview { width:100%; aspect-ratio:1; border-radius:12px; border:1px solid var(--border); background:#0d1122; display:flex; align-items:center; justify-content:center; color:var(--muted); margin-bottom:1rem; }
+.sigil-preview { width:100%; aspect-ratio:1; border-radius:12px; border:1px solid var(--border); background:#0d1122; display:flex; align-items:center; justify-content:center; color:var(--muted); margin-bottom:1rem; overflow:hidden; }
 </style>
 </head>
 <body>
@@ -61,7 +61,12 @@ input { width:100%; padding:0.75rem; border-radius:12px; border:1px solid var(--
     <div class="card">
       <h2>Spirit Sigil (ERC-1155)</h2>
       <p style="color:var(--muted);font-size:0.9rem;">5 MATIC • Eternal Spin</p>
-      <div class="sigil-preview" style="overflow:hidden;"><img src="https://ipfs.io/ipfs/QmR8DMwURzdmUpQCuDyvZqCnWCAydg8c2KXwtJjNJW4Krx/spiritwolf-sigil-thumb.png" style="width:100%;height:100%;object-fit:cover;" alt="Sigil" onerror="this.style.display=none"/></div>
+      <div class="sigil-preview">
+        <video autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;">
+          <source src="https://ipfs.io/ipfs/QmR8DMwURzdmUpQCuDyvZqCnWCAydg8c2KXwtJjNJW4Krx/spiritwolf-sigil-loop.mp4" type="video/mp4">
+          Your browser doesn't support video.
+        </video>
+      </div>
       <div class="supply-bar-bg"><div class="supply-bar-fill" id="sigilSupplyBar" style="width:0%"></div></div>
       <p style="font-size:0.8rem;color:var(--muted);"><span id="sigilMinted">0</span>/1000</p>
       <input type="number" id="sigilAmount" value="1" min="1" max="10" />
@@ -73,7 +78,20 @@ input { width:100%; padding:0.75rem; border-radius:12px; border:1px solid var(--
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.16.0/dist/ethers.umd.min.js"></script>
 <script>
 const COMPOSITE_CID='QmUkUUUhcs89VkqJzZAhP8wnDHzDwehDSbAri8QGHbChvZ';
-function shuffle(){const bg=Math.floor(Math.random()*5);const st=Math.floor(Math.random()*5);const wf=Math.floor(Math.random()*5);const au=Math.floor(Math.random()*5);const combo=bg*125+st*25+wf*5+au;const cv=document.getElementById('previewCanvas');if(!cv)return;const ctx=cv.getContext('2d');const img=new Image();img.crossOrigin='anonymous';img.onload=()=>{cv.width=img.width;cv.height=img.height;ctx.drawImage(img,0,0);};img.src='https://ipfs.io/ipfs/'+COMPOSITE_CID+'/'+combo+'.webp';}
+function shuffle(){
+  const bg=Math.floor(Math.random()*5);
+  const st=Math.floor(Math.random()*5);
+  const wf=Math.floor(Math.random()*5);
+  const au=Math.floor(Math.random()*5);
+  const combo=bg*125+st*25+wf*5+au;
+  const cv=document.getElementById('previewCanvas');
+  if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const img=new Image();
+  img.crossOrigin='anonymous';
+  img.onload=()=>{ cv.width=img.width; cv.height=img.height; ctx.drawImage(img,0,0); };
+  img.src='https://ipfs.io/ipfs/'+COMPOSITE_CID+'/'+combo+'.webp';
+}
 
 const WOLF_ADDR = '0x461C0dC291FdE5271e2BaB8d7595BD5ec78ce938';
 const SIGIL_ADDR = '0xE7c5C37E5962db2Ac6fFDDA650287Fb97A1e5f5d';
@@ -82,28 +100,32 @@ const SIGIL_ABI = ['function mint(uint256 amount) external payable','function to
 let provider, signer, wolfContract, sigilContract, wallet;
 
 async function connect() {
-  if(!window.ethereum if(!window.ethereum) return alert(if(!window.ethereum) return alert( !window.rabby) return alert.'Install MetaMask or Rabby');
-  await window.ethereum.request({method:'eth_requestAccounts'});
+  if (!window.ethereum && !window.rabby) {
+    return alert('Install MetaMask or Rabby');
+  }
+  await window.ethereum.request({ method: 'eth_requestAccounts' });
   provider = new ethers.BrowserProvider(window.ethereum);
   signer = await provider.getSigner();
   wallet = await signer.getAddress();
-  wolfContract = new ethers.Contract(WOLF_ADDR,WOLF_ABI,signer);
-  sigilContract = new ethers.Contract(SIGIL_ADDR,SIGIL_ABI,signer);
-  document.getElementById('connectBtn').textContent = wallet.slice(0,6)+'...'+wallet.slice(-4);
+  wolfContract = new ethers.Contract(WOLF_ADDR, WOLF_ABI, signer);
+  sigilContract = new ethers.Contract(SIGIL_ADDR, SIGIL_ABI, signer);
+  document.getElementById('connectBtn').textContent = wallet.slice(0, 6) + '...' + wallet.slice(-4);
   document.getElementById('wolfMintBtn').disabled = false;
   document.getElementById('sigilMintBtn').disabled = false;
   await updateStats();
-  window.ethereum.on('accountsChanged',()=>location.reload());
-  window.ethereum.on('chainChanged',()=>location.reload());
+  window.ethereum.on('accountsChanged', () => location.reload());
+  window.ethereum.on('chainChanged', () => location.reload());
 }
 
 async function updateStats(){
-  const wt = Number(await wolfContract.totalSupply());
-  document.getElementById('wolfMinted').textContent = wt;
-  document.getElementById('wolfSupplyBar').style.width = (wt/625*100)+'%';
-  const st = Number(await sigilContract.totalMinted());
-  document.getElementById('sigilMinted').textContent = st;
-  document.getElementById('sigilSupplyBar').style.width = (st/1000*100)+'%';
+  try {
+    const wt = Number(await wolfContract.totalSupply());
+    document.getElementById('wolfMinted').textContent = wt;
+    document.getElementById('wolfSupplyBar').style.width = (wt/625*100)+'%';
+    const st = Number(await sigilContract.totalMinted());
+    document.getElementById('sigilMinted').textContent = st;
+    document.getElementById('sigilSupplyBar').style.width = (st/1000*100)+'%';
+  } catch(e) { console.warn('Stats update error:', e); }
 }
 
 function status(el,msg,type){ el.innerHTML = `<div class="status ${type}">${msg}</div>`; }
@@ -115,8 +137,8 @@ async function mintWolf(){
   try {
     btn.disabled=true; btn.textContent='Minting...';
     status(st,'Confirm wallet transaction...','info');
-    const price = await provider.call({to:WOLF_ADDR,data:"0xc002d23d"}).then(r=>BigInt(r));
-    const tx = await wolfContract.mint({value:price});
+    const price = ethers.parseEther('20');
+    const tx = await wolfContract.mint({value: price});
     status(st,'Waiting for confirmation...','info');
     await tx.wait();
     status(st,'Wolf minted!','success');
@@ -134,8 +156,8 @@ async function mintSigil(){
   try {
     btn.disabled=true; btn.textContent='Minting...';
     status(st,'Confirm wallet transaction...','info');
-    const price = await provider.call({to:SIGIL_ADDR,data:"0xc002d23d"}).then(r=>BigInt(r));
-    const tx = await sigilContract.mint(amount,{value:price * BigInt(amount)});
+    const price = ethers.parseEther('5');
+    const tx = await sigilContract.mint(amount, {value: price * BigInt(amount)});
     status(st,'Waiting for confirmation...','info');
     await tx.wait();
     status(st,`${amount} Sigil(s) minted!`,'success');
@@ -146,7 +168,7 @@ async function mintSigil(){
 }
 
 document.getElementById('connectBtn').addEventListener('click',connect);
-if(document.getElementById('shuffleBtn'))document.getElementById('shuffleBtn').addEventListener('click',shuffle);
+if(document.getElementById('shuffleBtn')) document.getElementById('shuffleBtn').addEventListener('click',shuffle);
 shuffle();
 document.getElementById('wolfMintBtn').addEventListener('click',mintWolf);
 document.getElementById('sigilMintBtn').addEventListener('click',mintSigil);
