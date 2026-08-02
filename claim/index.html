@@ -35,7 +35,8 @@
 </head>
 <body>
   <div class="container">
-    <nav class="nav"><a href="/spirit-wolf/">← Back to Gallery</a><h1>Claim Tokens</h1><a href="/spirit-wolf/mint/">Mint →</a></nav>
+    <nav class="nav"><a href="/">← Back to Gallery</a><h1>Claim Tokens</h1><a href="/mint/">Mint →</a></nav>
+    <p style="text-align:center;font-size:0.85rem;color:#f59e0b;margin-bottom:1rem;">⚠️ Requires ~0.02 POL for gas. <strong>Free claims coming soon</strong> with the Alsania Paymaster.</p>
     
     <div class="info-card" style="background:var(--card); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:2rem; backdrop-filter:blur(12px); margin-bottom:1rem;">
       <h2 style="font-family:'Cinzel',serif; margin-bottom:1rem;">About the Tokens</h2>
@@ -74,8 +75,8 @@
     const CFG={alsa:{mainnet:{token:'0x1630fE468B414A964ed974b9F5Dd69d950E1Eb74',faucet:'0xC28ee3B632E71792AB95bc83eb10A780DaF9164D',chain:137},amoy:{token:'0x253577D50896353c68773756Da7A150fA3e67035',faucet:'0xe035C32dc3aa527310FDC6e0DE5E4C22095614A1',chain:80002}},spirit:{mainnet:{token:'0xec5E56058494F2cb260Fd7D81B15f04872dbC34a',faucet:'0x062323e8Ed549f0158792c35fFC174cb42E9c0dD',chain:137},amoy:{token:'0x545C9FF7dDC1590e39A55A1F981742F289adAd56',faucet:'0x5Ef2A08f1C7C4a9bBEDE907f84fB1cBfD6341E70',chain:80002}}};
     const ABI=['function proveHumanity() external payable','function claim() external','function isVerifiedHuman(address) external view returns (bool)'];
     let provider,signer;
-    async function connect(){if(!window.ethereum)return;await window.ethereum.request({method:'eth_requestAccounts'});provider=new ethers.BrowserProvider(window.ethereum);signer=await provider.getSigner();}
-    async function claim(token,network){if(!signer)await connect();const c=CFG[token][network];const s=document.getElementById(token+'-'+network+'-status');try{s.innerHTML='<div class="status info">Checking...</div>';const tc=new ethers.Contract(c.token,ABI,signer);const a=await signer.getAddress();if(!(await tc.isVerifiedHuman(a))){s.innerHTML='<div class="status info">Staking 0.01 POL...</div>';await(await tc.proveHumanity({value:ethers.parseEther('0.01')})).wait()}s.innerHTML='<div class="status info">Claiming...</div>';const fc=new ethers.Contract(c.faucet,['function claim() external'],signer);await(await fc.claim()).wait();s.innerHTML='<div class="status success">Claimed! Back in 24h.</div>'}catch(e){if(e.code!=='ACTION_REJECTED')s.innerHTML='<div class="status error">'+((e.reason||e.message)?.slice(0,100))+'</div>'}}
+    async function connect(){if(!window.ethereum)return alert('Install MetaMask or Rabby');try{await window.ethereum.request({method:'eth_requestAccounts'});provider=new ethers.BrowserProvider(window.ethereum);signer=await provider.getSigner()}catch(e){console.error(e);alert('Wallet connect failed')}}
+    async function claim(token,network){if(!signer)await connect();const c=CFG[token][network];const s=document.getElementById(token+'-'+network+'-status');try{s.innerHTML='<div class="status info">Checking...</div>';const tc=new ethers.Contract(c.token,ABI,signer);const a=await signer.getAddress();const isAmoy=c.chain===80002;if(!isAmoy){if(!(await tc.isVerifiedHuman(a))){s.innerHTML='<div class="status info">Staking 0.01 POL...</div>';await(await tc.proveHumanity({value:ethers.parseEther('0.01')})).wait()}}s.innerHTML='<div class="status info">Claiming...</div>';const fc=new ethers.Contract(c.faucet,['function claim() external'],signer);await(await fc.claim()).wait();s.innerHTML='<div class="status success">Claimed! Back in 24h.</div>'}catch(e){if(e.code!=='ACTION_REJECTED')s.innerHTML='<div class="status error">'+((e.reason||e.message)?.slice(0,100))+'</div>'}}
     connect();
   </script>
 </body>
